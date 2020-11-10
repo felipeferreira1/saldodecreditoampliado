@@ -1,94 +1,87 @@
 #Rotina para coletar e apresentar em gráficos algumas séries do banco central
 #Feito por: Felipe Simplício Ferreira
-#última atualização: 0/01/2019
+#última atualização: 10/10/2020
 
 
 #Definindo diretórios a serem utilizados
-
 getwd()
-setwd("C:/Users/e270780232/Documents")
+setwd("C:/Users/User/Documents")
 
-#Definindo data incial  e final (padrão usar a data de hoje) das séries que serão coletadas
-datainicial = "01/01/2013"
-datafinal = format(Sys.time(), "%d/%m/%Y")
+#PACOTES REQUERIDOS:
+#INSTALAR QUANDO NECESSÁRIO
+#EXEMPLO:install.packages("pryr")
+library(rio)
 
+#Criando função para coleta de séries
+coleta_dados_sgs = function(series,datainicial="01/01/2013", datafinal = format(Sys.time(), "%d/%m/%Y")){
+  #Argumentos: vetor de séries, datainicial que pode ser manualmente alterada e datafinal que automaticamente usa a data de hoje
+  #Cria estrutura de repetição para percorrer vetor com códigos de séries e depois juntar todas em um único dataframe
+  for (i in 1:length(series)){
+    dados = read.csv(url(paste("http://api.bcb.gov.br/dados/serie/bcdata.sgs.",series[i],"/dados?formato=csv&dataInicial=",datainicial,"&dataFinal=",datafinal,sep="")),sep=";")
+    dados[,-1] = as.numeric(gsub(",",".",dados[,-1])) #As colunas do dataframe em objetos numéricos exceto a da data
+    nome_coluna = series[i] #Nomeia cada coluna do dataframe com o código da série
+    colnames(dados) = c('data', nome_coluna)
+    nome_arquivo = paste("dados", i, sep = "") #Nomeia os vários arquivos intermediários que são criados com cada série
+    assign(nome_arquivo, dados)
+    
+    if(i==1)
+      base = dados1 #Primeira repetição cria o dataframe
+    else
+      base = merge(base, dados, by = "data", all = T) #Demais repetições agregam colunas ao dataframe criado
+    print(paste(i, length(series), sep = '/')) #Printa o progresso da repetição
+  }
+  
+  base$data = as.Date(base$data, "%d/%m/%Y") #Transforma coluna de data no formato de data
+  base = base[order(base$data),] #Ordena o dataframe de acordo com a data
+  return(base)
+}
 
 #Saldos
-serie = c("28183", "28184", "28185", "28186", "28187", "28188", "28189", "28190", "28191", "28192", "28193","28194", "28195")
+series1 = c("28183", "28184", "28185", "28186", "28187", "28188", "28189", "28190", "28191", "28192", "28193","28194", "28195")
 
-#Repetição para coletar e juntar séries em um arquivo
-for (i in 1:length(serie)){
-  dados = read.csv(url(paste("http://api.bcb.gov.br/dados/serie/bcdata.sgs.",serie[i],"/dados?formato=csv&dataInicial=",datainicial,"&dataFinal=",datafinal,sep="")),sep=";")
-  dados$data = as.Date(dados$data, "%d/%m/%Y")
-  nome = paste("serie", i, sep = "")
-  assign(nome, dados)
-  if(i==1)
-    base1 = serie1
-  else
-    base1 = merge(base1, dados, by = "data", all = T)
-}
+base1 <- coleta_dados_sgs(series1)
 
 #Nomeando colunas do dataframe com todas as séries
 names(base1) = c("Data", "Saldo de crédito ampliado - Total", "Saldo de empréstimos total ao setor não financeiro", "Saldo de empréstimos do SFN ao setor não financeiro", "Saldo de empréstimos de OSF ao setor não financeiro",
                 "Saldo de empréstimos de fundos governamentais ao setor não financeiro", "Saldo de títulos de dívida - Total", "Saldo de títulos públicos", "Saldo de títulos privados", "Saldo de instrumentos de securitização",
                 "Saldo de dívida externa - Total", "Saldo de dívida externa - Empréstimos", "Saldo de dívida externa - Títulos emitidos no mercado externo", "Saldo de dívida externa - Títulos emitidos no mercado doméstico")
 
-rm(dados)
-rm(list=objects(pattern="^serie"))
-
+#Exportando resultados
 write.csv2(base1,"1-Saldos.csv", row.names = F)
+export(base1, "saldo_ampliado.xlsx", sheetName = "1-Saldos")
 
 
 #Saldos - Governo geral
-serie = c("28196", "28197", "28198", "28199", "28200", "28201", "28202")
+series2 = c("28196", "28197", "28198", "28199", "28200", "28201", "28202")
 
-for (i in 1:length(serie)){
-  dados = read.csv(url(paste("http://api.bcb.gov.br/dados/serie/bcdata.sgs.",serie[i],"/dados?formato=csv&dataInicial=",datainicial,"&dataFinal=",datafinal,sep="")),sep=";")
-  dados$data = as.Date(dados$data, "%d/%m/%Y")
-  nome = paste("serie", i, sep = "")
-  assign(nome, dados)
-  if(i==1)
-    base2 = serie1
-  else
-    base2 = merge(base2, dados, by = "data", all = T)
-}
+base2 <- coleta_dados_sgs(series2)
 
+#Nomeando colunas do dataframe com todas as séries
 names(base2) = c("Data", "Saldo de crédito ampliado ao governo - Total", "Saldo de empréstimos do SFN ao governo", "Saldo de títulos públicos - Governo geral", "Saldo de dívida externa - Concedido ao governo - Total", "Saldo de dívida externa - Empréstimos ao governo",
                 "Saldo de dívida externa - Títulos públicos emitidos no mercado externo", "Saldo de dívida externa - Títulos públicos emitidos no mercado doméstico")
 
-rm(dados)
-rm(list=objects(pattern="^serie"))
-
+#Exportando resultados
 write.csv2(base2,"2-Saldos governo geral.csv", row.names = F)
+export(base2, "saldo_ampliado.xlsx", which = "2-Saldos governo geral")
 
 #Saldos - Empresas e famílias
-serie = c("28203", "28204", "28205", "28206", "28207", "28208", "28209", "28210", "28211", "28212", "28213", "28214")
+series3 = c("28203", "28204", "28205", "28206", "28207", "28208", "28209", "28210", "28211", "28212", "28213", "28214")
 
-for (i in 1:length(serie)){
-  dados = read.csv(url(paste("http://api.bcb.gov.br/dados/serie/bcdata.sgs.",serie[i],"/dados?formato=csv&dataInicial=",datainicial,"&dataFinal=",datafinal,sep="")),sep=";")
-  dados$data = as.Date(dados$data, "%d/%m/%Y")
-  nome = paste("serie", i, sep = "")
-  assign(nome, dados)
-  if(i==1)
-    base3 = serie1
-  else
-    base3 = merge(base3, dados, by = "data", all = T)
-}
+base3 <- coleta_dados_sgs(series3)
 
+#Nomeando colunas do dataframe com todas as séries
 names(base3) = c("Data", "Saldo de crédito ampliado a empresas e famílias - Total", "Saldo de empréstimos a empresas e famílias - Total", "Saldo de empréstimos do SFN a empresas e famílias",
                 "Saldo de empréstimos de OSF a empresas e famílias", "Saldo de empréstimos de fundos governamentais a empresas e famílias", "Saldo de títulos de dívida emitidos por empresas e famílias - Total",
                 "Saldo de títulos privados emitidos por empresas e famílias", "Saldo de instrumentos de securitização - devedores empresas e famílias", "Saldo de dívida externa - Concedido a empresas e famílias - Total",
                 "Saldo de dívida externa - Empréstimos a empresas e famílias", "Saldo de dívida externa - Títulos privados emitidos no mercado externo", "Saldo de dívida externa - Títulos privados emitidos no mercado doméstico")
 
-rm(dados)
-rm(list=objects(pattern="^serie"))
-
+#Exportando resultados
 write.csv2(base3,"3-Saldos empresas e famílias.csv", row.names = F)
+export(base3, "saldo_ampliado.xlsx", which = "3-Saldos empresas e famílias")
+
 
 #PIB acumulado dos últimos 12 meses - Valores correntes (R$ milhões)
-serie = "4382"
-pib = read.csv(url(paste("http://api.bcb.gov.br/dados/serie/bcdata.sgs.",serie[1],"/dados?formato=csv&dataInicial=",datainicial,"&dataFinal=",datafinal,sep="")),sep=";")
-pib[,2]=as.numeric(gsub(",","\\.",pib[,2]))
+pib <- coleta_dados_sgs("4382")
 
 #Montagem da tabela do BCB
 ##Dados do último mês
@@ -199,16 +192,16 @@ pib[,2]=as.numeric(gsub(",","\\.",pib[,2]))
 
 ##Dados do último mês em %PIB
 `Empréstimos e financiamentos`=c(
-  base1$`Saldo de empréstimos do SFN ao setor não financeiro`[length(base1$`Saldo de empréstimos do SFN ao setor não financeiro`)]/pib$valor[length(pib$valor)],
-  base1$`Saldo de empréstimos de OSF ao setor não financeiro`[length(base1$`Saldo de empréstimos de OSF ao setor não financeiro`)]/pib$valor[length(pib$valor)],
-  base1$`Saldo de empréstimos de fundos governamentais ao setor não financeiro`[length(base1$`Saldo de empréstimos de fundos governamentais ao setor não financeiro`)]/pib$valor[length(pib$valor)]
+  base1$`Saldo de empréstimos do SFN ao setor não financeiro`[length(base1$`Saldo de empréstimos do SFN ao setor não financeiro`)]/pib$`4382`[length(pib$`4382`)],
+  base1$`Saldo de empréstimos de OSF ao setor não financeiro`[length(base1$`Saldo de empréstimos de OSF ao setor não financeiro`)]/pib$`4382`[length(pib$`4382`)],
+  base1$`Saldo de empréstimos de fundos governamentais ao setor não financeiro`[length(base1$`Saldo de empréstimos de fundos governamentais ao setor não financeiro`)]/pib$`4382`[length(pib$`4382`)]
 )
 `Empréstimos e financiamentos`[4] = sum(`Empréstimos e financiamentos`)
 
 `Títulos de dívida` = c(
-  base2$`Saldo de títulos públicos - Governo geral`[length(base2$`Saldo de títulos públicos - Governo geral`)]/pib$valor[length(pib$valor)],
-  base3$`Saldo de títulos privados emitidos por empresas e famílias`[length(base3$`Saldo de títulos privados emitidos por empresas e famílias`)]/pib$valor[length(pib$valor)],
-  base3$`Saldo de instrumentos de securitização - devedores empresas e famílias`[length(base3$`Saldo de instrumentos de securitização - devedores empresas e famílias`)]/pib$valor[length(pib$valor)]
+  base2$`Saldo de títulos públicos - Governo geral`[length(base2$`Saldo de títulos públicos - Governo geral`)]/pib$`4382`[length(pib$`4382`)],
+  base3$`Saldo de títulos privados emitidos por empresas e famílias`[length(base3$`Saldo de títulos privados emitidos por empresas e famílias`)]/pib$`4382`[length(pib$`4382`)],
+  base3$`Saldo de instrumentos de securitização - devedores empresas e famílias`[length(base3$`Saldo de instrumentos de securitização - devedores empresas e famílias`)]/pib$`4382`[length(pib$`4382`)]
 )
 `Títulos de dívida`[4] = sum(`Títulos de dívida`)
 
@@ -226,7 +219,7 @@ pib[,2]=as.numeric(gsub(",","\\.",pib[,2]))
 )
 `Dívida externa privada`[4] = sum(`Dívida externa privada`)
 
-`Dívida externa` = (`Dívida externa pública` + `Dívida externa privada`)/pib$valor[length(pib$valor)]
+`Dívida externa` = (`Dívida externa pública` + `Dívida externa privada`)/pib$`4382`[length(pib$`4382`)]
 
 `Box7`=cbind(`Empréstimos e financiamentos`, `Títulos de dívida`, `Dívida externa`)
 `Box8`=c(`Box7`[1,1], `Box7`[2,1], `Box7`[3,1], `Box7`[4,1], `Box7`[1,2], `Box7`[2,2], `Box7`[3,2], `Box7`[4,2],
@@ -245,4 +238,6 @@ row.names(Box9) = c("Operações de crédito do SFN", "   Outras sociedades finance
 names(Box9) = c("24 meses atrás", "12 meses atrás", "Último Mês", "Ultimo Mês - %PIB")
 
 write.csv2(Box9, "Box.csv")
-
+Box10 <- data.frame(Dados = row.names(Box9), Box9)
+names(Box10) = c("Dados", "24 meses atrás", "12 meses atrás", "Último Mês", "Ultimo Mês - %PIB")
+export(Box10, "saldo_ampliado.xlsx", which = "Box")
