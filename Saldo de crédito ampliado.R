@@ -48,7 +48,7 @@ names(base1) = c("Data", "Saldo de crédito ampliado - Total", "Saldo de emprésti
 
 #Exportando resultados
 write.csv2(base1,"1-Saldos.csv", row.names = F)
-export(base1, "saldo_ampliado.xlsx", sheetName = "1-Saldos")
+export(base1, "Saldo Ampliado.xlsx", sheetName = "1-Saldos")
 
 
 #Saldos - Governo geral
@@ -62,7 +62,7 @@ names(base2) = c("Data", "Saldo de crédito ampliado ao governo - Total", "Saldo 
 
 #Exportando resultados
 write.csv2(base2,"2-Saldos governo geral.csv", row.names = F)
-export(base2, "saldo_ampliado.xlsx", which = "2-Saldos governo geral")
+export(base2, "Saldo Ampliado.xlsx", which = "2-Saldos governo geral")
 
 #Saldos - Empresas e famílias
 series3 = c("28203", "28204", "28205", "28206", "28207", "28208", "28209", "28210", "28211", "28212", "28213", "28214")
@@ -77,7 +77,7 @@ names(base3) = c("Data", "Saldo de crédito ampliado a empresas e famílias - Tota
 
 #Exportando resultados
 write.csv2(base3,"3-Saldos empresas e famílias.csv", row.names = F)
-export(base3, "saldo_ampliado.xlsx", which = "3-Saldos empresas e famílias")
+export(base3, "Saldo Ampliado.xlsx", which = "3-Saldos empresas e famílias")
 
 
 #PIB acumulado dos últimos 12 meses - Valores correntes (R$ milhões)
@@ -240,4 +240,4 @@ names(Box9) = c("24 meses atrás", "12 meses atrás", "Último Mês", "Ultimo Mês - 
 write.csv2(Box9, "Box.csv")
 Box10 <- data.frame(Dados = row.names(Box9), Box9)
 names(Box10) = c("Dados", "24 meses atrás", "12 meses atrás", "Último Mês", "Ultimo Mês - %PIB")
-export(Box10, "saldo_ampliado.xlsx", which = "Box")
+export(Box10, "Saldo Ampliado.xlsx", which = "Box")
